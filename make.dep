@@ -1,0 +1,16 @@
+atags.o: atags.c atags.h framebuffer.h memory.h textutils.h
+divby0.o: divby0.c framebuffer.h textutils.h
+framebuffer.o: framebuffer.c framebuffer.h barrier.h led.h mailbox.h \
+ memory.h memutils.h textutils.h teletext.h
+initsys.o: initsys.c
+interrupts.o: interrupts.c interrupts.h framebuffer.h led.h memory.h \
+ textutils.h scheduler.h process.h
+led.o: led.c led.h memory.h
+mailbox.o: mailbox.c mailbox.h barrier.h memory.h
+main.o: main.c led.h atags.h barrier.h framebuffer.h interrupts.h \
+ mailbox.h memory.h memutils.h textutils.h process.h scheduler.h
+memory.o: memory.c memory.h
+memutils.o: memutils.c memutils.h
+textutils.o: textutils.c textutils.h
+scheduler.o: scheduler.c process.h framebuffer.h textutils.h
+process.o: process.c textutils.h framebuffer.h
