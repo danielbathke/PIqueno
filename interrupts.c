@@ -66,10 +66,10 @@ __attribute__ ((interrupt ("SWI"))) void interrupt_swi(void)
 
 /* IRQs flash the OK LED */
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
-{
-	*armTimerIRQClear = 0;
+{   
+    *armTimerIRQClear = 0;
 	led_invert();
-        schedule_timeout();
+	schedule_timeout();
 }
 
 __attribute__ ((interrupt ("ABORT"))) void interrupt_data_abort(void)
@@ -146,7 +146,7 @@ void interrupts_init(void)
 	*irqEnableBasic = 0x00000001;
 
 	/* Interrupt every 1024 * 256 (prescaler) timer ticks */
-	*armTimerLoad = 0x00000400;
+	*armTimerLoad = 0x00000040;
 
 	/* Timer enabled, interrupt enabled, prescale=256, "23 bit" counter
 	 * (did they mean 32 bit?)
