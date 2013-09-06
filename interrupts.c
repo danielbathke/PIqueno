@@ -67,13 +67,24 @@ __attribute__ ((interrupt ("SWI"))) void interrupt_swi(void)
 /* IRQs flash the OK LED */
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
 {   
+	asm volatile("cps #0x1f");
+	asm volatile("push {R0-lr}");
+    asm volatile("MRS R0, SPSR");
+    asm volatile("push {R0, lr}");
+    
+    unsigned int * stack_pointer;
+    
+    asm volatile ("MOV %0, SP\n\t" : "=r" (stack_pointer) );
+	
     *armTimerIRQClear = 0;
+    
 	led_invert();
-	schedule_timeout();
+	
+	schedule_timeout(stack_pointer);
 }
 
 __attribute__ ((interrupt ("ABORT"))) void interrupt_data_abort(void)
-{
+{		
 	register unsigned int addr, far;
 	asm volatile("mov %[addr], lr" : [addr] "=r" (addr) );
 	/* Read fault address register */
@@ -97,6 +108,9 @@ __attribute__ ((interrupt ("ABORT"))) void interrupt_data_abort(void)
 	 * GCC doesn't properly deal with data aborts in its interrupt
 	 * handling - no option to return to the failed instruction
 	 */
+	 
+	asm volatile("cps #0x1f");	 
+	asm volatile("cpsid aif");
 }
 
 /* Return to this function after a prefetch abort */
