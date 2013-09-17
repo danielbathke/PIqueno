@@ -67,6 +67,21 @@ __attribute__ ((interrupt ("SWI"))) void interrupt_swi(void)
 /* IRQs flash the OK LED */
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
 {   
+	asm volatile("push {R0-R12}");
+	
+	asm volatile("MOV R0, LR");
+	
+	
+	asm volatile("cps #0x1f");
+	
+	asm volatile("push {R0}");
+	
+	
+	asm volatile("cps #0x12");
+	
+	asm volatile("pop {R0-R12}");
+	
+	
 	asm volatile("cps #0x1f");
 	
 	asm volatile("push {R0-R12}");
@@ -78,9 +93,9 @@ __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
     asm volatile("push {R0}");
     
     
-	asm volatile("cps #0x12");
+    asm volatile("cps #0x12");
 	
-	asm volatile ("MOV R0, LR");
+	asm volatile("MOV R0, LR");
 	
 	
 	asm volatile("cps #0x1f");
@@ -92,8 +107,6 @@ __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
 	asm volatile ("MOV %0, R0\n\t" : "=r" (pc) );
     
     asm volatile ("MOV %0, SP\n\t" : "=r" (stack_pointer) );
-	
-    *armTimerIRQClear = 0;
     
 	led_invert();
 	
@@ -183,4 +196,9 @@ void interrupts_init(void)
 	 * (did they mean 32 bit?)
 	 */
 	*armTimerControl = 0x000000aa;
+}
+
+void timer_reset(void)
+{
+	*armTimerIRQClear = 0;
 }

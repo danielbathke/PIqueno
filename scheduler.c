@@ -2,6 +2,7 @@
 #include "process.h"
 #include "framebuffer.h"
 #include "textutils.h"
+#include "interrupts.h"
 
 extern unsigned int _physdatastart, _physbssstart, _physbssend;
 extern unsigned int _datastart, _bssstart, _bssend;
@@ -91,7 +92,7 @@ void schedule_timeout(unsigned long stack_pointer, unsigned long pc) {
     
     active_process_index = next_process;
     
-    if (process_list[active_process_index].times_loaded == 5) { return; }
+//    if (process_list[active_process_index].times_loaded == 5) { return; }
     
     process_list[active_process_index].times_loaded++;
     
@@ -106,17 +107,28 @@ void schedule_timeout(unsigned long stack_pointer, unsigned long pc) {
 	asm volatile("MOV SP, %[addr]" : : [addr] "r" ((unsigned long )(process_list[active_process_index].stack_pointer)) );
 	
 	if (process_list[active_process_index].times_loaded > 1) {
-			
+		
+		timer_reset();
+		
 		asm volatile("pop {R0}");
 		asm volatile("MSR   SPSR_cxsf, R0");
 		
 		asm volatile("pop {LR}");
+		
 		asm volatile("pop {R0 - R12}");
+		
+		asm volatile("cpsie i");
+		
+		asm volatile("pop {PC}");
+		
+	} else {
+	
+		timer_reset();
+	
+		asm volatile("cpsie i");
+		
+		asm volatile("MOV PC, %[addr]" : : [addr] "r" ((unsigned long )(process_list[active_process_index].pc)) );
 	
 	}
-	
-	asm volatile("cpsie i");
-	
-	asm volatile("MOV PC, %[addr]" : : [addr] "r" ((unsigned long )(process_list[active_process_index].pc)) );
 	
 }

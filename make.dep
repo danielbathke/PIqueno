@@ -12,5 +12,5 @@ main.o: main.c led.h atags.h barrier.h framebuffer.h interrupts.h \
 memory.o: memory.c memory.h
 memutils.o: memutils.c memutils.h
 textutils.o: textutils.c textutils.h
-scheduler.o: scheduler.c process.h framebuffer.h textutils.h
+scheduler.o: scheduler.c process.h framebuffer.h textutils.h interrupts.h
 process.o: process.c textutils.h framebuffer.h

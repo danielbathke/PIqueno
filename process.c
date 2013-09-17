@@ -6,7 +6,7 @@ void sample_process_1() {
     
     console_write("Starting process 1 ");
     
-    int to = 1000;
+    int to = 10000;
     
     int i;
     for (i=0; i<to; i++) {
@@ -20,7 +20,7 @@ void sample_process_2() {
 
     console_write("Starting process 2 ");
     
-    int to = 1000;
+    int to = 10000;
     
     int i;
     for (i=0; i<to; i++) {
