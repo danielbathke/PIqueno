@@ -6,8 +6,8 @@ typedef struct {
     unsigned int id;
     char* name;
     unsigned int parent;
-    unsigned int addr;
-    unsigned int * stack_pointer;
+    unsigned long stack_pointer;
+	unsigned long pc;
     unsigned int times_loaded;
 } process;
 

@@ -165,15 +165,22 @@ void main(unsigned int r0, unsigned int machtype, unsigned int atagsaddr)
 	mem_init();
 	led_init();
 	fb_init();
-	interrupts_init();
+	
 
 	/* First boot message */
 	console_write("Welcome to PIqueno\n\n");
+	
+		unsigned int timer = 99999999;
+
+	while(timer--)
+		asm("mov r0, r0");	/* No-op */
+		
+		interrupts_init();
         
 	create_main_process();
         
-        fork("Sample process 1", &sample_process_1);
-        fork("Sample process 2", &sample_process_2);
+	fork("Sample process 1", &sample_process_1);
+	fork("Sample process 2", &sample_process_2);
         
 
 	while(1);

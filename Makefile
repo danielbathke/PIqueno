@@ -50,7 +50,7 @@ ASOPT=--warn -mcpu=arm1176jzf-s
 # -nostdinc so as not to use any system #include locations
 # -ffreestanding to tell the compiler the usual system libraries aren't
 # available
-CCOPT=-Wall -O6 -nostdinc -ffreestanding -marm -mcpu=arm1176jzf-s
+CCOPT=-Wall -O6 -nostdinc -ffreestanding -marm -g -mcpu=arm1176jzf-s
 
 # Object files built from C
 COBJS=atags.o divby0.o framebuffer.o initsys.o interrupts.o led.o mailbox.o \

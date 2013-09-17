@@ -21,7 +21,7 @@ void create_main_process() {
 
     main_process.id = 0;
     main_process.name = "Main";
-    main_process.addr = &main_endloop;
+    main_process.pc = &main_endloop;
     main_process.times_loaded = 1;
     
     unsigned int stack_pointer;
@@ -40,31 +40,13 @@ void create_main_process() {
     process_count++;
 }
 
-void fork(char * name, unsigned int addr) {
+void fork(char * name, unsigned int * pc) {
 
 	asm volatile("cps #0x1f");
 
     process fork_process;
-    
-    unsigned int stack_pointer;
-    unsigned int lr;
-    
-	asm volatile ("MOV %0, SP\n\t" : "=r" (stack_pointer) );
-	asm volatile ("MOV %0, LR\n\t" : "=r" (lr) );
 	
-	unsigned int * forked_stack_pointer = stack_base + (process_count * 104857600);
-	
-	asm volatile("MOV SP, %[addr]" : : [addr] "r" (forked_stack_pointer) );
-	asm volatile("MOV LR, %[addr]" : : [addr] "r" (addr) );
-	
-	asm volatile("push {R0-lr}");
-    asm volatile("MRS R0, SPSR");
-    asm volatile("push {R0, lr}");
-    
-    asm volatile ("MOV %0, SP\n\t" : "=r" (forked_stack_pointer) );
-    
-    asm volatile("MOV SP, %[addr]" : : [addr] "r" (stack_pointer) );
-    asm volatile("MOV LR, %[addr]" : : [addr] "r" (lr) );
+	unsigned int * forked_stack_pointer = stack_base + (process_count * 1024);
 	
 	console_write("Forked stack is 0x");
 	console_write(tohex(forked_stack_pointer, 4));
@@ -72,7 +54,7 @@ void fork(char * name, unsigned int addr) {
 
     fork_process.id = process_count;
     fork_process.name = name;
-    fork_process.addr = addr;
+    fork_process.pc = pc;
     fork_process.parent = active_process_index;
     fork_process.times_loaded = 0;
     fork_process.stack_pointer = forked_stack_pointer;
@@ -82,8 +64,11 @@ void fork(char * name, unsigned int addr) {
     process_count++;
 }
 
-void schedule_timeout(unsigned int * stack_pointer) {
+void schedule_timeout(unsigned long stack_pointer, unsigned long pc) {
 	
+    process_list[active_process_index].stack_pointer = stack_pointer;
+    process_list[active_process_index].pc = pc;
+    
     console_write("\n");
     console_write("\n");
     console_write("Schedule timeout. Current active pid is ");
@@ -93,11 +78,13 @@ void schedule_timeout(unsigned int * stack_pointer) {
     console_write(". Switching to next process.\n");      
 
 	console_write("Saving stack...");
-    
-    process_list[active_process_index].stack_pointer = stack_pointer;
-    
     console_write(" stack saved, was 0x");
     console_write(tohex(process_list[active_process_index].stack_pointer, 4));
+    console_write("\n");
+
+	console_write("Saving pc...");
+    console_write(" pc saved, was 0x");
+    console_write(tohex(process_list[active_process_index].pc, 4));
     console_write("\n");
     
     int next_process = (active_process_index+1 == process_count) ? 1 : active_process_index+1;
@@ -111,22 +98,25 @@ void schedule_timeout(unsigned int * stack_pointer) {
     console_write("Restoring stack 0x");
     console_write(tohex(process_list[active_process_index].stack_pointer, 4));
     console_write("\n");
+	
+    console_write("Restoring pc 0x");
+    console_write(tohex(process_list[active_process_index].pc, 4));
+    console_write("\n");
     
-	asm volatile("MOV SP, %[addr]" : : [addr] "r" ((unsigned int *)(process_list[active_process_index].stack_pointer)) );
+	asm volatile("MOV SP, %[addr]" : : [addr] "r" ((unsigned long )(process_list[active_process_index].stack_pointer)) );
+	
+	if (process_list[active_process_index].times_loaded > 1) {
+			
+		asm volatile("pop {R0}");
+		asm volatile("MSR   SPSR_cxsf, R0");
 		
-	asm volatile("pop {R0, lr}");
-	asm volatile("MSR   SPSR_cxsf, R0");
+		asm volatile("pop {LR}");
+		asm volatile("pop {R0 - R12}");
 	
-	unsigned int lr;
-
-	asm volatile ("MOV %0, SP\n\t" : "=r" (lr) );
-	
-	console_write("Going to LR 0x");
-	console_write(tohex(lr, 4));
-	console_write("\n");
-	
-	asm volatile("pop {R0 - lr}");
+	}
 	
 	asm volatile("cpsie i");
-	asm volatile("bx lr");
+	
+	asm volatile("MOV PC, %[addr]" : : [addr] "r" ((unsigned long )(process_list[active_process_index].pc)) );
+	
 }

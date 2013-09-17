@@ -68,11 +68,28 @@ __attribute__ ((interrupt ("SWI"))) void interrupt_swi(void)
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
 {   
 	asm volatile("cps #0x1f");
-	asm volatile("push {R0-lr}");
+	
+	asm volatile("push {R0-R12}");
+	
+	asm volatile("push {LR}");
+	
     asm volatile("MRS R0, SPSR");
-    asm volatile("push {R0, lr}");
     
-    unsigned int * stack_pointer;
+    asm volatile("push {R0}");
+    
+    
+	asm volatile("cps #0x12");
+	
+	asm volatile ("MOV R0, LR");
+	
+	
+	asm volatile("cps #0x1f");
+	
+	unsigned long pc;
+
+    unsigned long stack_pointer;
+	
+	asm volatile ("MOV %0, R0\n\t" : "=r" (pc) );
     
     asm volatile ("MOV %0, SP\n\t" : "=r" (stack_pointer) );
 	
@@ -80,7 +97,7 @@ __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
     
 	led_invert();
 	
-	schedule_timeout(stack_pointer);
+	schedule_timeout(stack_pointer, pc);
 }
 
 __attribute__ ((interrupt ("ABORT"))) void interrupt_data_abort(void)
