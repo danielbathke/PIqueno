@@ -4,9 +4,11 @@
 
 #include "process.h"
 
-extern void create_main_process();
-extern void fork(char * name, unsigned long addr);
-extern void schedule_timeout(unsigned long stack_pointer, unsigned long pc);
+void create_main_process();
+void fork(char * name, unsigned long addr);
+void schedule_timeout(unsigned long stack_pointer, unsigned long pc);
+void terminate_process();
+void halt();
 
 #endif	/* SCHEDULER_H */
 

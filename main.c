@@ -10,130 +10,6 @@
 #include "process.h"
 #include "scheduler.h"
 
-/* Pull various bits of information from the VideoCore and display it on
- * screen
- */
-void mailboxtest(void)
-{
-	/* 1kb buffer on the stack for passing data to/from VideoCore */
-	volatile unsigned int buffer[256] __attribute__((aligned (16)));
-	unsigned int count, var;
-	unsigned int mem, size;
-
-	console_write(BG_GREEN BG_HALF "Reading from tag mailbox\n\n" BG_BLACK);
-
-	buffer[0] = 8 * 4;	// Total size
-	buffer[1] = 0;		// Request
-
-	buffer[2] = 0x40003;	// Display size
-	buffer[3] = 8;		// Buffer size
-	buffer[4] = 0;		// Request size
-	buffer[5] = 0;
-	buffer[6] = 0;
-
-	buffer[7] = 0;
-
-	writemailbox(8, mem_v2p((unsigned int)buffer));
-
-	var = readmailbox(8);
-
-	console_write(COLOUR_PUSH FG_CYAN "Display resolution: " BG_WHITE BG_HALF BG_HALF);
-	console_write(todec(buffer[5], 0));
-	console_write("x");
-	console_write(todec(buffer[6], 0));
-	console_write(COLOUR_POP "\n");
-
-	buffer[0] = 8 * 4;	// Total size
-	buffer[1] = 0;		// Request
-
-	buffer[2] = 0x40008;	// Display size
-	buffer[3] = 8;		// Buffer size
-	buffer[4] = 0;		// Request size
-	buffer[5] = 0;
-	buffer[6] = 0;
-
-	buffer[7] = 0;
-
-	writemailbox(8, mem_v2p((unsigned int)buffer));
-
-	var = readmailbox(8);
-
-	console_write(COLOUR_PUSH FG_CYAN "Pitch: " BG_WHITE BG_HALF BG_HALF);
-	console_write(todec(buffer[5], 0));
-	console_write(" bytes" COLOUR_POP "\n");
-
-	buffer[0] = 200 * 4;	// Total size
-	buffer[1] = 0;		// Request
-
-	buffer[2] = 0x50001;	// Command line
-	buffer[3] = 195*4;	// Buffer size
-	buffer[4] = 0;		// Request size
-	
-	for(count=5; count<200; count++)
-		buffer[count] = 0;
-
-	writemailbox(8, mem_v2p((unsigned int)buffer));
-
-	var = readmailbox(8);
-
-	console_write("\n" COLOUR_PUSH FG_RED "Kernel command line: " COLOUR_PUSH BG_RED BG_HALF BG_HALF);
-	console_write((char *)(&buffer[5]));
-	console_write(COLOUR_POP COLOUR_POP "\n\n");
-
-
-	buffer[0] = 13 * 4;	// Total size
-	buffer[1] = 0;		// Request
-
-	buffer[2] = 0x10005;	// ARM memory
-	buffer[3] = 8;		// Buffer size
-	buffer[4] = 0;		// Request size
-	buffer[5] = 0;
-	buffer[6] = 0;
-
-	buffer[7] = 0x10006;	// VideoCore memory
-	buffer[8] = 8;		// Buffer size
-	buffer[9] = 0;		// Request size
-	buffer[10] = 0;
-	buffer[11] = 0;
-
-	buffer[12] = 0;
-
-	writemailbox(8, mem_v2p((unsigned int)buffer));
-
-	var = readmailbox(8);
-
-	mem = buffer[5];
-	size = buffer[6];
-	var = size / (1024*1024);
-
-	console_write(COLOUR_PUSH FG_YELLOW "ARM memory: " BG_YELLOW BG_HALF BG_HALF "0x");
-	console_write(tohex(mem, 4));
-	console_write(" - 0x");
-	console_write(tohex(mem+size-1, 4));
-	console_write(" (");
-	console_write(todec(size, 0));
-	/* ] appears as an arrow in the SAA5050 character set */
-	console_write(" bytes ] ");
-	console_write(todec(var, 0));
-	console_write(" megabytes)" COLOUR_POP "\n");
-
-	mem = buffer[10];
-	size = buffer[11];
-	var = size / (1024*1024);
-	console_write(COLOUR_PUSH FG_YELLOW "VC memory:  " BG_YELLOW BG_HALF BG_HALF "0x");
-	console_write(tohex(mem, 4));
-	console_write(" - 0x");
-	console_write(tohex(mem+size-1, 4));
-	console_write(" (");
-	console_write(todec(size, 0));
-	console_write(" bytes ] ");
-	console_write(todec(var, 0));
-	console_write(" megabytes)" COLOUR_POP "\n");
-}
-
-/* Call non-existent code at 33MB - should cause a prefetch abort */
-//static void(*deliberate_prefetch_abort)(void) = (void(*)(void))0x02100000;
-
 /* Location of the initial page table in RAM */
 static unsigned int *initpagetable = (unsigned int *) mem_p2v(0x4000);
 
@@ -166,31 +42,26 @@ void main(unsigned int r0, unsigned int machtype, unsigned int atagsaddr)
 	led_init();
 	fb_init();
 	
-
-	/* First boot message */
+	// First boot message
 	console_write("Welcome to PIqueno\n\n");
-	
-		unsigned int timer = 99999999;
-
-	while(timer--)
-		asm("mov r0, r0");	/* No-op */
-		
-		interrupts_init();
         
+	// Creating my process in the process table
 	create_main_process();
-        
+    
+    // Create two sample processes with name and address of function
 	fork("Sample process 1", &sample_process_1);
 	fork("Sample process 2", &sample_process_2);
+	fork("Sample process 3", &sample_process_2);
+		
+	// Configuring iterrupts	
+	interrupts_init();
         
-
-	while(1);
+	// Do nothing and wait for scheduler to stop executing me
+	main_endloop();
 }
 
 void main_endloop(void)
 {
-
-	/* Repeatedly halt the CPU and wait for interrupt */
-	while(1)
-		asm volatile("mcr p15,0,r0,c7,c0,4" : : : "r0");
-
+	// Repeatedly halt the CPU and wait for interrupt
+	halt();
 }

@@ -5,6 +5,7 @@
 #include "memory.h"
 #include "textutils.h"
 #include "scheduler.h"
+#include "syscall.h"
 
 static volatile unsigned int *irqEnable1 = (unsigned int *) mem_p2v(0x2000b210);
 static volatile unsigned int *irqEnable2 = (unsigned int *) mem_p2v(0x2000b214);
@@ -40,61 +41,82 @@ __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 /* Unhandled exceptions - hang the machine */
 __attribute__ ((naked)) void bad_exception(void)
 {
-        console_write("Bad exception. System halted.");
+	console_write("Bad exception. System halted.");
 	while(1);
 }
 
 __attribute__ ((interrupt ("SWI"))) void interrupt_swi(void)
 {
-	register unsigned int addr;
-	register unsigned int swi_no;
+	unsigned int addr;
+	unsigned int swi;
+	
 	/* Read link register into addr - contains the address of the
 	 * instruction after the SWI
 	 */
 	asm volatile("mov %[addr], lr" : [addr] "=r" (addr) );
 
 	addr -= 4;
+	
 	/* Bottom 24 bits of the SWI instruction are the SWI number */
-	swi_no = *((unsigned int *)addr) & 0x00ffffff;
+	swi = *((unsigned int *)addr) & 0x00ffffff;
 
+	console_write("\n");
 	console_write(COLOUR_PUSH FG_GREEN "SWI call. Address: 0x");
 	console_write(tohex(addr, 4));
 	console_write("  SWI number ");
-	console_write(todec(swi_no, 0));
+	console_write(todec(swi, 0));
 	console_write(COLOUR_POP "\n");
+	
+	asm volatile("cps #0x1f");
+	
+	syscall(swi);
 }
 
-/* IRQs flash the OK LED */
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
 {   
+	// This function starts on IRQ mode
+	
+	// Push all registers into the IRQ mode stack (R13)
 	asm volatile("push {R0-R12}");
 	
+	// Put LR register of IRQ mode (PC of interrupted process) on R0
 	asm volatile("MOV R0, LR");
 	
 	
+	// Change to system mode
 	asm volatile("cps #0x1f");
 	
+	// Push R0 (interrupted PC) to the system mode stack
 	asm volatile("push {R0}");
 	
 	
+	// Return to IRQ mode
 	asm volatile("cps #0x12");
 	
+	// Pop all registers again
 	asm volatile("pop {R0-R12}");
 	
 	
+	// Return to system mode
 	asm volatile("cps #0x1f");
 	
+	// Push all registers into the system mode stack
 	asm volatile("push {R0-R12}");
 	
+	// Push the interrupted LR to system mode stack
 	asm volatile("push {LR}");
 	
+	// Copy the processor status to R0
     asm volatile("MRS R0, SPSR");
     
+    // Push the processor status to system mode stack
     asm volatile("push {R0}");
     
     
+    // Return to IRQ mode
     asm volatile("cps #0x12");
 	
+	// Copy LR to R0
 	asm volatile("MOV R0, LR");
 	
 	
@@ -108,8 +130,10 @@ __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
     
     asm volatile ("MOV %0, SP\n\t" : "=r" (stack_pointer) );
     
+    // Invert led to inform context switch activity
 	led_invert();
 	
+	// Jump to scheduler to do the context switch
 	schedule_timeout(stack_pointer, pc);
 }
 
@@ -190,7 +214,7 @@ void interrupts_init(void)
 	*irqEnableBasic = 0x00000001;
 
 	/* Interrupt every 1024 * 256 (prescaler) timer ticks */
-	*armTimerLoad = 0x00000040;
+	*armTimerLoad = 0x00000400;
 
 	/* Timer enabled, interrupt enabled, prescale=256, "23 bit" counter
 	 * (did they mean 32 bit?)
