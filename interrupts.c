@@ -27,39 +27,39 @@ static volatile unsigned int *armTimerIRQClear = (unsigned int *) mem_p2v(0x2000
  */
 __attribute__ ((naked, aligned(32))) static void interrupt_vectors(void)
 {
-	asm volatile("b bad_exception\n"	/* RESET */
-		"b bad_exception\n"	/* UNDEF */
-		"b interrupt_swi\n"
-		"b interrupt_prefetch_abort \n"
-		"b interrupt_data_abort \n"
-		"b bad_exception;\n"	/* Unused vector */
-		"b interrupt_irq \n"
-		"b bad_exception\n"	/* FIQ */
+	asm volatile("b bad_exception\n"		// Reset
+		"b bad_exception\n"					// Undefined
+		"b interrupt_swi\n"					// Software interrupt
+		"b interrupt_prefetch_abort \n"		// Prefech abort interrupt
+		"b interrupt_data_abort \n"			// Data abort interrupt
+		"b bad_exception;\n"				// Unused vector
+		"b interrupt_irq \n"				// IRQ interrupt
+		"b bad_exception\n"					// Fast Interrupt (FIQ), not used
 	);
 }
 
-/* Unhandled exceptions - hang the machine */
+// Unhandled exceptions, halt
 __attribute__ ((naked)) void bad_exception(void)
 {
 	console_write("Bad exception. System halted.");
 	while(1);
 }
 
+// Software interrupt
 __attribute__ ((interrupt ("SWI"))) void interrupt_swi(void)
 {
 	unsigned int addr;
 	unsigned int swi;
 	
-	/* Read link register into addr - contains the address of the
-	 * instruction after the SWI
-	 */
+	// Read link register into addr - contains the address of the instruction after the SWI
 	asm volatile("mov %[addr], lr" : [addr] "=r" (addr) );
 
 	addr -= 4;
 	
-	/* Bottom 24 bits of the SWI instruction are the SWI number */
+	// Bottom 24 bits of the SWI instruction are the SWI number
 	swi = *((unsigned int *)addr) & 0x00ffffff;
 
+	// Debug message
 	console_write("\n");
 	console_write(COLOUR_PUSH FG_GREEN "SWI call. Address: 0x");
 	console_write(tohex(addr, 4));
@@ -67,11 +67,14 @@ __attribute__ ((interrupt ("SWI"))) void interrupt_swi(void)
 	console_write(todec(swi, 0));
 	console_write(COLOUR_POP "\n");
 	
+	// Changing processor mode
 	asm volatile("cps #0x1f");
 	
+	// Handle syscall
 	syscall(swi);
 }
 
+// IRQ
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
 {   
 	// This function starts on IRQ mode
@@ -119,15 +122,15 @@ __attribute__ ((interrupt ("IRQ"))) void interrupt_irq(void)
 	// Copy LR to R0
 	asm volatile("MOV R0, LR");
 	
-	
+	// Back to system mode
 	asm volatile("cps #0x1f");
 	
 	unsigned long pc;
 
     unsigned long stack_pointer;
 	
+	// Getting pc and stack just to debug
 	asm volatile ("MOV %0, R0\n\t" : "=r" (pc) );
-    
     asm volatile ("MOV %0, SP\n\t" : "=r" (stack_pointer) );
     
     // Invert led to inform context switch activity
@@ -167,7 +170,7 @@ __attribute__ ((interrupt ("ABORT"))) void interrupt_data_abort(void)
 	asm volatile("cpsid aif");
 }
 
-/* Return to this function after a prefetch abort */
+// Return to this function after a prefetch abort
 extern void main_endloop(void);
 
 __attribute__ ((interrupt ("ABORT"))) void interrupt_prefetch_abort(void)
@@ -203,22 +206,19 @@ __attribute__ ((interrupt ("ABORT"))) void interrupt_prefetch_abort(void)
  */
 void interrupts_init(void)
 {
-	/* Set interrupt base register */
+	// Set interrupt base register
 	asm volatile("mcr p15, 0, %[addr], c12, c0, 0" : : [addr] "r" (&interrupt_vectors));
         
-	/* Turn on interrupts */
+	// Turn on interrupts
 	asm volatile("cpsie i");
 
-	/* Use the ARM timer - BCM 2832 peripherals doc, p.196 */
-	/* Enable ARM timer IRQ */
+	// Enable ARM timer IRQ
 	*irqEnableBasic = 0x00000001;
 
-	/* Interrupt every 1024 * 256 (prescaler) timer ticks */
-	*armTimerLoad = 0x00000400;
+	// Interrupt every x * 256 (prescaler) timer ticks
+	*armTimerLoad = 0x00004000;
 
-	/* Timer enabled, interrupt enabled, prescale=256, "23 bit" counter
-	 * (did they mean 32 bit?)
-	 */
+	// Timer enabled
 	*armTimerControl = 0x000000aa;
 }
 
