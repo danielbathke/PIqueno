@@ -3,6 +3,7 @@
 #include "framebuffer.h"
 #include "scheduler.h"
 
+// Just some counting for easy debug on the screen. Simulate user process.
 void sample_process_1() {
     
     console_write("Starting process 1 ");
@@ -18,9 +19,11 @@ void sample_process_1() {
 		}
     }
     
+    // Call software interrupt #0 (terminate)
     asm volatile("SWI #0");
 }
 
+// Just some counting for easy debug on the screen. Simulate user process.
 void sample_process_2() {
 
     console_write("Starting process 2 ");
@@ -36,5 +39,6 @@ void sample_process_2() {
 		}
     }
     
+    // Call software interrupt #0 (terminate)
     asm volatile("SWI #0");
 }

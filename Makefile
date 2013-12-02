@@ -53,7 +53,7 @@ ASOPT=--warn -mcpu=arm1176jzf-s
 CCOPT=-Wall -O6 -nostdinc -ffreestanding -marm -g -mcpu=arm1176jzf-s
 
 # Object files built from C
-COBJS=atags.o divby0.o framebuffer.o initsys.o interrupts.o led.o mailbox.o \
+COBJS=framebuffer.o initsys.o interrupts.o led.o mailbox.o \
 	main.o memory.o memutils.o textutils.o scheduler.o process.o syscall.o
 
 # Object files build from assembler

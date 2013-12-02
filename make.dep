@@ -1,18 +1,32 @@
-atags.o: atags.c atags.h framebuffer.h memory.h textutils.h
-divby0.o: divby0.c framebuffer.h textutils.h
-framebuffer.o: framebuffer.c framebuffer.h barrier.h led.h mailbox.h \
- memory.h memutils.h textutils.h teletext.h
-initsys.o: initsys.c
-interrupts.o: interrupts.c interrupts.h framebuffer.h led.h memory.h \
- textutils.h scheduler.h process.h syscall.h
-led.o: led.c led.h memory.h
-mailbox.o: mailbox.c mailbox.h barrier.h memory.h
-main.o: main.c led.h atags.h barrier.h framebuffer.h interrupts.h \
- mailbox.h memory.h memutils.h textutils.h process.h scheduler.h
-memory.o: memory.c memory.h
-memutils.o: memutils.c memutils.h
-textutils.o: textutils.c textutils.h
-scheduler.o: scheduler.c process.h framebuffer.h textutils.h interrupts.h
-process.o: process.c textutils.h framebuffer.h scheduler.h process.h
-syscall.o: syscall.c scheduler.h process.h syscall.h framebuffer.h \
- textutils.h
+framebuffer.o: framebuffer.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h framebuffer.h led.h \
+ mailbox.h memory.h memutils.h textutils.h teletext.h
+initsys.o: initsys.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h
+interrupts.o: interrupts.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h interrupts.h framebuffer.h \
+ led.h memory.h textutils.h scheduler.h process.h syscall.h
+led.o: led.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h led.h memory.h
+mailbox.o: mailbox.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h mailbox.h barrier.h \
+ memory.h
+main.o: main.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h led.h framebuffer.h \
+ interrupts.h mailbox.h memory.h memutils.h textutils.h process.h \
+ scheduler.h
+memory.o: memory.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h memory.h
+memutils.o: memutils.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h memutils.h
+textutils.o: textutils.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h textutils.h
+scheduler.o: scheduler.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h process.h framebuffer.h \
+ textutils.h interrupts.h
+process.o: process.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h textutils.h framebuffer.h \
+ scheduler.h process.h
+syscall.o: syscall.c /usr/include/stdc-predef.h \
+ /usr/include/x86_64-linux-gnu/bits/predefs.h scheduler.h process.h \
+ syscall.h framebuffer.h textutils.h

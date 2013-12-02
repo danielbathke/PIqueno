@@ -1,6 +1,4 @@
 #include "led.h"
-#include "atags.h"
-#include "barrier.h"
 #include "framebuffer.h"
 #include "interrupts.h"
 #include "mailbox.h"

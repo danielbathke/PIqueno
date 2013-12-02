@@ -216,7 +216,7 @@ void interrupts_init(void)
 	*irqEnableBasic = 0x00000001;
 
 	// Interrupt every x * 256 (prescaler) timer ticks
-	*armTimerLoad = 0x00004000;
+	*armTimerLoad = 0x00000400;
 
 	// Timer enabled
 	*armTimerControl = 0x000000aa;

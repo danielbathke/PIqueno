@@ -1,5 +1,4 @@
 #include "framebuffer.h"
-#include "barrier.h"
 #include "led.h"
 #include "mailbox.h"
 #include "memory.h"
@@ -69,13 +68,13 @@ void fb_init(void)
 
 	/* Get the display size */
 	mailbuffer[0] = 8 * 4;		// Total size
-	mailbuffer[1] = 0;		// Request
+	mailbuffer[1] = 0;			// Request
 	mailbuffer[2] = 0x40003;	// Display size
-	mailbuffer[3] = 8;		// Buffer size
-	mailbuffer[4] = 0;		// Request size
-	mailbuffer[5] = 0;		// Space for horizontal resolution
-	mailbuffer[6] = 0;		// Space for vertical resolution
-	mailbuffer[7] = 0;		// End tag
+	mailbuffer[3] = 8;			// Buffer size
+	mailbuffer[4] = 0;			// Request size
+	mailbuffer[5] = 0;			// Space for horizontal resolution
+	mailbuffer[6] = 0;			// Space for vertical resolution
+	mailbuffer[7] = 0;			// End tag
 
 	writemailbox(8, physical_mb);
 
@@ -102,37 +101,37 @@ void fb_init(void)
 		fb_fail(FBFAIL_GOT_INVALID_RESOLUTION);
 
 
-	/* Set up screen */
+	// Setup screen
 
 	unsigned int c = 1;
-	mailbuffer[c++] = 0;		// Request
+	mailbuffer[c++] = 0;			// Request
 
 	mailbuffer[c++] = 0x00048003;	// Tag id (set physical size)
-	mailbuffer[c++] = 8;		// Value buffer size (bytes)
-	mailbuffer[c++] = 8;		// Req. + value length (bytes)
-	mailbuffer[c++] = fb_x;		// Horizontal resolution
-	mailbuffer[c++] = fb_y;		// Vertical resolution
+	mailbuffer[c++] = 8;			// Value buffer size (bytes)
+	mailbuffer[c++] = 8;			// Req. + value length (bytes)
+	mailbuffer[c++] = fb_x;			// Horizontal resolution
+	mailbuffer[c++] = fb_y;			// Vertical resolution
 
 	mailbuffer[c++] = 0x00048004;	// Tag id (set virtual size)
-	mailbuffer[c++] = 8;		// Value buffer size (bytes)
-	mailbuffer[c++] = 8;		// Req. + value length (bytes)
-	mailbuffer[c++] = fb_x;		// Horizontal resolution
-	mailbuffer[c++] = fb_y;		// Vertical resolution
+	mailbuffer[c++] = 8;			// Value buffer size (bytes)
+	mailbuffer[c++] = 8;			// Req. + value length (bytes)
+	mailbuffer[c++] = fb_x;			// Horizontal resolution
+	mailbuffer[c++] = fb_y;			// Vertical resolution
 
 	mailbuffer[c++] = 0x00048005;	// Tag id (set depth)
-	mailbuffer[c++] = 4;		// Value buffer size (bytes)
-	mailbuffer[c++] = 4;		// Req. + value length (bytes)
-	mailbuffer[c++] = 16;		// 16 bpp
+	mailbuffer[c++] = 4;			// Value buffer size (bytes)
+	mailbuffer[c++] = 4;			// Req. + value length (bytes)
+	mailbuffer[c++] = 16;			// 16 bpp
 
 	mailbuffer[c++] = 0x00040001;	// Tag id (allocate framebuffer)
-	mailbuffer[c++] = 8;		// Value buffer size (bytes)
-	mailbuffer[c++] = 4;		// Req. + value length (bytes)
-	mailbuffer[c++] = 16;		// Alignment = 16
-	mailbuffer[c++] = 0;		// Space for response
+	mailbuffer[c++] = 8;			// Value buffer size (bytes)
+	mailbuffer[c++] = 4;			// Req. + value length (bytes)
+	mailbuffer[c++] = 16;			// Alignment = 16
+	mailbuffer[c++] = 0;			// Space for response
 
-	mailbuffer[c++] = 0;		// Terminating tag
+	mailbuffer[c++] = 0;			// Terminating tag
 
-	mailbuffer[0] = c*4;		// Buffer size
+	mailbuffer[0] = c*4;			// Buffer size
 
 	writemailbox(8, physical_mb);
 

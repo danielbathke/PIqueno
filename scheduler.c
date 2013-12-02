@@ -17,6 +17,7 @@ void terminate_process() {
 	process_list[active_process_index].status = PROCESS_STATUS_TERMINATED;
 }
 
+// Function to create the main process
 void create_main_process() {
 	
 	// Creating process
@@ -50,10 +51,15 @@ void create_main_process() {
     process_count++;
 }
 
+/* 
+ * Procedure to fork this process, creating a new one, pointing the pc
+ * to the memory address of the desired procedure
+ */
 void fork(char * name, unsigned long * pc) {
 
     process fork_process;
 	
+	// Basic memory organization to get new stack addr. just add 1024 bytes from the main stack
 	unsigned int * forked_stack_pointer = stack_base + (process_count * 1024);
 	
 	console_write("Forked stack is 0x");
@@ -73,19 +79,26 @@ void fork(char * name, unsigned long * pc) {
     process_count++;
 }
 
+/*
+ * Function to get the next ready process in the list
+ */
 int next_waiting_process_index() {
 	
+	// Start in the active index
 	int next_process_index = active_process_index;
 	
+	// Do this while the actual process isnt in the waiting status and not reach the actual running process
 	do {
 		next_process_index++;
 		
+		// Just rewind the list
 		if (next_process_index == process_count) {
 			next_process_index = 0;
 		}
 	
 	} while ((process_list[next_process_index].status != PROCESS_STATUS_WAITING) && (next_process_index != active_process_index));
 	
+	// If the found process isnt waiting
 	if (process_list[next_process_index].status != PROCESS_STATUS_WAITING) {
 		return -1;
 	}
@@ -93,15 +106,23 @@ int next_waiting_process_index() {
 	return next_process_index;
 }
 
+/*
+ * Just keep the processor busy
+ */
 void halt() {
 	while(1);
 }
 
+/*
+ * Procedure coming from the IRQ interrupt, to change the running process
+ */
 void schedule_timeout(unsigned long stack_pointer, unsigned long pc) {
 	
+	// Saving stack and pc
     process_list[active_process_index].stack_pointer = stack_pointer;
     process_list[active_process_index].pc = pc;
     
+    // Updating process status to waiting
     if (process_list[active_process_index].status == PROCESS_STATUS_RUNNING) {
 		process_list[active_process_index].status = PROCESS_STATUS_WAITING;
 	}
@@ -124,15 +145,19 @@ void schedule_timeout(unsigned long stack_pointer, unsigned long pc) {
     console_write(tohex(process_list[active_process_index].pc, 4));
     console_write("\n");
     
+    // Get next process id
     int next_process = next_waiting_process_index();
     
+    // If -1, halt
     if (next_process < 0) {
 		console_write("No more waiting processes, halting.");
 		halt();
 	}
     
+    // Updating next running process
     active_process_index = next_process;
     
+    // Increasing statistics, updating status to running
     process_list[active_process_index].times_loaded++;
     process_list[active_process_index].status = PROCESS_STATUS_RUNNING;
     
@@ -144,36 +169,39 @@ void schedule_timeout(unsigned long stack_pointer, unsigned long pc) {
     console_write(tohex(process_list[active_process_index].pc, 4));
     console_write("\n");
     
+    // Assembly to load the sp with the new process stack address
 	asm volatile("MOV SP, %[addr]" : : [addr] "r" ((unsigned long )(process_list[active_process_index].stack_pointer)) );
 	
+	// If its is not the first time
 	if (process_list[active_process_index].times_loaded > 1) {
 		
 		timer_reset();
 		
+		// Pops registers from the stack
 		asm volatile("pop {R0}");
-
 		asm volatile("MSR   SPSR_cxsf, R0");
-		
 		asm volatile("pop {LR}");
-		
 		asm volatile("pop {R0 - R12}");
 		
+		// Turn on interrupt again
 		asm volatile("cpsie i");
 		
+		// Pops the last register into PC to resume processing
 		asm volatile("pop {PC}");
 		
 	} else {
 		
+		// Push the first pc address into the stack
 		unsigned long addr = (unsigned long )(process_list[active_process_index].pc);
-		
 		asm volatile("MOV R0, %[addr]" : : [addr] "r" (addr) );
-		
 		asm volatile("push {R0}");
 		
 		timer_reset();
 	
+		// Turn on interrupt again
 		asm volatile("cpsie i");
 		
+		// Pops the last register into PC to resume processing
 		asm volatile("pop {PC}");
 	
 	}
